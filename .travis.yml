@@ -1,0 +1,48 @@
+language: cpp
+compiler: gcc
+
+env:
+  global:
+    - PATH=$PATH:$TRAVIS_BUILD_DIR:$TRAVIS_BUILD_DIR/plugin-runner-1.2-linux
+    - secure: "WRffGxdEZPHxs3pVmJHMKR7FY4IV1PqieTJhCkZJtGci89TDyRXTW8aj4/2SZ67Yq3qwjvhpfg0FwjMmRqg+tfhQ5f7r7h6H51zDuCHje3RIlUca8H+raliWbQGBuUVyt1uQiO1ufZ2epgcMiVorhUb8INjoq5BCXOfV7eRU39k="
+
+install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -y linux-libc-dev:i386 gcc-4.7 gcc-4.7-multilib g++-4.7 g++-4.7-multilib cmake
+
+  - wget https://github.com/Zeex/pawn/releases/download/20150412/pawnc-3.10.20150412-linux.tar.gz
+  - sudo tar xvf pawnc-3.10.20150412-linux.tar.gz --strip-components=1 -C /usr/local
+  - sudo ldconfig
+
+  - wget https://github.com/Zeex/plugin-runner/releases/download/v1.2/plugin-runner-1.2-linux.tar.gz
+  - tar xvf plugin-runner-1.2-linux.tar.gz
+
+  - wget https://www.dropbox.com/s/iuzb74xugjgdzkg/artifact-uploader-linux.tar.gz?dl=1 -O artifact-uploader-linux.tar.gz
+  - tar xvf artifact-uploader-linux.tar.gz
+
+before_script:
+  - cmake . -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc-4.7 -DCMAKE_CXX_COMPILER=g++-4.7
+
+script:
+  - make
+  - make test
+  - make package
+
+after_script:
+  - artifact-uploader $DROPBOX_TOKEN ./jit-*-linux.tar.gz
+
+after_failure:
+  - cat Testing/Temporary/LastTest.log
+
+deploy:
+  provider: releases
+  api_key:
+    secure: H3zByVtEfSHCQtNZsbP/5l6uBkpbZ+T5eh3eKRjNYIEUS6OXl3Z9Rwl/ruYR7cCD863yHWf4iuXOYX4+VejzPxBjTGNcCtKmY6py7LyiTRFRn60hYKpBdJEA8Tj0z7EUG7g6gA/DkBkjbjqkY1nUW47e7IGSwhwSlvPxDneZ8Uk=
+  file_glob: true
+  file:
+    - 'jit-*-linux.tar.gz'
+  draft: true
+  skip_cleanup: true
+  on:
+    repo: Zeex/samp-plugin-jit
+    tags: true
